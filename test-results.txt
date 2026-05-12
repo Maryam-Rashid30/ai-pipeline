@@ -1,0 +1,46 @@
+PASS ./app.test.js
+  Add todo
+    ✓ clicking Add button adds a new todo to the list (39 ms)
+    ✓ pressing Enter adds a new todo (16 ms)
+    ✓ input is cleared after adding (8 ms)
+    ✓ blank input does not add a todo (5 ms)
+    ✓ empty input does not add a todo (5 ms)
+    ✓ multiple todos can be added (8 ms)
+  Mark todo as complete
+    ✓ checking the checkbox marks the item as done (6 ms)
+    ✓ done item has strikethrough style via .done class (5 ms)
+    ✓ checking then unchecking removes done state (7 ms)
+    ✓ checkbox is checked when item is done (6 ms)
+  Delete todo
+    ✓ clicking delete button removes the item (5 ms)
+    ✓ deleting one of several removes only that item (8 ms)
+  Count of remaining incomplete items
+    ✓ count shows 0 items left when list is empty (4 ms)
+    ✓ count increments when a todo is added (5 ms)
+    ✓ count uses singular "item" for exactly 1 (5 ms)
+    ✓ count uses plural "items" for 2 or more (5 ms)
+    ✓ count decrements when a todo is deleted (7 ms)
+    ✓ count does not include completed todos (5 ms)
+    ✓ count goes to 0 after all incomplete todos are completed (3 ms)
+  Empty state message
+    ✓ empty message is visible when no todos exist (4 ms)
+    ✓ empty message is hidden when todos exist (5 ms)
+    ✓ empty message reappears after all todos are deleted (3 ms)
+  localStorage persistence
+    ✓ todos are saved to localStorage when added (2 ms)
+    ✓ done state is persisted to localStorage (4 ms)
+    ✓ deletion is persisted to localStorage (4 ms)
+    ✓ todos are loaded from localStorage on page load (5 ms)
+    ✓ completed todos loaded from storage render with done class (4 ms)
+  No console errors
+    ✓ no console.error calls during normal usage (5 ms)
+  Mobile viewport (375px)
+    ✓ app container has width that fits within 375px (2 ms)
+    ✓ meta viewport tag is present for mobile scaling (3 ms)
+    ✓ input and button are present and usable at mobile width (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        0.813 s, estimated 1 s
+Ran all test suites matching /app.test.js/i.
