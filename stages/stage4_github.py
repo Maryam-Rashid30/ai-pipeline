@@ -13,7 +13,7 @@ def push_to_github(issue_key, summary):
         ["git", "init"],
         ["git", "config", "user.email", JIRA_EMAIL],
         ["git", "config", "user.name", GITHUB_USERNAME],
-        ["git", "checkout", "-b", branch],
+        ["git", "checkout", "-B", branch],
         ["git", "add", "."],
         ["git", "commit", "-m", f"feat: {issue_key} - {summary}"],
         ["git", "push", "-f", f"https://{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git", branch],

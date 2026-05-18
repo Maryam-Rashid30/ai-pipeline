@@ -21,11 +21,16 @@ def deploy_to_vercel(issue_key):
         }
     }
 
-    response = requests.post(
-        f"https://api.vercel.com/v13/deployments?projectId={VERCEL_PROJECT_ID}&teamId={VERCEL_TEAM_ID}",
-        headers=headers,
-        json=payload
-    )
+    try:
+        response = requests.post(
+            f"https://api.vercel.com/v13/deployments?projectId={VERCEL_PROJECT_ID}&teamId={VERCEL_TEAM_ID}",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+    except requests.exceptions.RequestException as e:
+        print(f"Network error triggering deployment: {e}")
+        return None
 
     if response.status_code not in [200, 201]:
         print(f"Deployment failed: {response.status_code}")
@@ -39,10 +44,15 @@ def deploy_to_vercel(issue_key):
     print("Waiting for deployment to go live...")
     for _ in range(24):
         time.sleep(10)
-        status_response = requests.get(
-            f"https://api.vercel.com/v13/deployments/{deployment_id}",
-            headers=headers
-        )
+        try:
+            status_response = requests.get(
+                f"https://api.vercel.com/v13/deployments/{deployment_id}",
+                headers=headers,
+                timeout=30
+            )
+        except requests.exceptions.RequestException as e:
+            print(f"Network error polling deployment status: {e}")
+            continue
         status = status_response.json().get("readyState")
         print(f"Deployment status: {status}")
 
