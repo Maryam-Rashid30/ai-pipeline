@@ -1,53 +1,55 @@
 PASS ./app.test.js
-  Add todo
-    ✓ clicking Add button adds a new todo item to the list (35 ms)
-    ✓ pressing Enter in the input adds a new todo item (15 ms)
-    ✓ input is cleared after adding a todo (8 ms)
-    ✓ whitespace-only input does not add a todo (4 ms)
-    ✓ empty input does not add a todo (5 ms)
-    ✓ multiple todos can be added (7 ms)
-  Mark todo as complete
-    ✓ checking the checkbox adds the done class for strikethrough (6 ms)
-    ✓ unchecking a completed todo removes the done class (6 ms)
-    ✓ completed checkbox is checked (6 ms)
-    ✓ todo text element is inside .done item (drives CSS line-through) (7 ms)
-  Delete todo
-    ✓ clicking delete button removes the todo item (6 ms)
-    ✓ deletes the correct item when multiple todos exist (7 ms)
+  DOM structure
+    ✓ renders text input for new todo (34 ms)
+    ✓ renders Add button (12 ms)
+    ✓ renders todo list element (6 ms)
+    ✓ renders item count element (4 ms)
+  Adding a todo
+    ✓ adds a todo item to the list when Add is clicked (11 ms)
+    ✓ clears the input after adding (5 ms)
+    ✓ adds a todo when Enter key is pressed (6 ms)
+    ✓ does not add empty or whitespace-only todos (5 ms)
+    ✓ multiple todos can be added (6 ms)
+  Marking a todo as complete
+    ✓ checking the checkbox marks the item as done (7 ms)
+    ✓ done item has strikethrough on text (via .done class) (8 ms)
+    ✓ unchecking a done item marks it incomplete again (7 ms)
+  Deleting a todo
+    ✓ clicking delete removes the item from the list (5 ms)
+    ✓ only the correct item is deleted when multiple todos exist (6 ms)
   Remaining item count
-    ✓ count shows 0 items left when list is empty (4 ms)
-    ✓ count updates when a todo is added (4 ms)
-    ✓ count uses singular "item" for exactly 1 item (5 ms)
-    ✓ count uses plural "items" for 2+ items (6 ms)
-    ✓ count decreases when an item is marked complete (5 ms)
-    ✓ count only counts incomplete items (7 ms)
-    ✓ count decreases when a todo is deleted (4 ms)
+    ✓ shows 0 items left on initial load (4 ms)
+    ✓ increments count when a todo is added (4 ms)
+    ✓ uses singular "item" for exactly one remaining (5 ms)
+    ✓ uses plural "items" for more than one remaining (6 ms)
+    ✓ count decreases when a todo is marked done (5 ms)
+    ✓ count increases again when a done todo is unchecked (6 ms)
+    ✓ count decreases when a todo is deleted (7 ms)
+    ✓ completed todos are excluded from count (4 ms)
   Empty state message
-    ✓ empty message is visible when no todos exist (6 ms)
-    ✓ empty message is hidden when there is at least one todo (4 ms)
+    ✓ empty message is visible when there are no todos (3 ms)
+    ✓ empty message is hidden when todos exist (3 ms)
     ✓ empty message reappears after all todos are deleted (4 ms)
   localStorage persistence
-    ✓ todos are saved to localStorage when added (3 ms)
-    ✓ done state is persisted to localStorage (4 ms)
-    ✓ deletion is reflected in localStorage (3 ms)
-    ✓ todos are loaded from localStorage on page load (5 ms)
-    ✓ loaded done todos show as checked (5 ms)
+    ✓ saves todos to localStorage when added (3 ms)
+    ✓ saves done state to localStorage (4 ms)
+    ✓ removes todo from localStorage when deleted (3 ms)
+    ✓ loads persisted todos on page load (6 ms)
+    ✓ loads persisted done state on page load (5 ms)
+    ✓ handles corrupt localStorage gracefully without throwing (7 ms)
+  Mobile viewport (375px)
+    ✓ input and add button are present at 375px width (3 ms)
+    ✓ app container exists and is visible at 375px (4 ms)
+    ✓ todos can still be added at mobile width (6 ms)
+    ✓ viewport meta tag is set for mobile (3 ms)
   No console errors
-    ✓ no console.error calls during normal usage (6 ms)
-  Mobile viewport
-    ✓ viewport meta tag is set for device width (3 ms)
-    ✓ responsive CSS media query targets mobile widths (3 ms)
-    ✓ input and Add button are grouped inside the input-row container (4 ms)
-    ✓ app renders todos correctly regardless of viewport size (5 ms)
-  DOM structure
-    ✓ page has a text input with id new-todo (2 ms)
-    ✓ page has an Add button with id add-btn (3 ms)
-    ✓ page has a todo list element with id todo-list (3 ms)
-    ✓ page has a count element with id count (3 ms)
-    ✓ each todo item has a checkbox, text span, and delete button (4 ms)
+    ✓ no console errors on initial page load (7 ms)
+    ✓ no console errors when adding a todo (4 ms)
+    ✓ no console errors when toggling a todo (4 ms)
+    ✓ no console errors when deleting a todo (4 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       37 passed, 37 total
+Tests:       39 passed, 39 total
 Snapshots:   0 total
-Time:        1.07 s
+Time:        0.837 s, estimated 1 s
 Ran all test suites matching /app.test.js/i.

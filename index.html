@@ -155,6 +155,7 @@
   </div>
 
   <script>
+  (function() {
     const STORAGE_KEY = 'todos_v1';
 
     let todos = (function load() {
@@ -234,6 +235,7 @@
     });
 
     render();
+  })();
   </script>
 </body>
 </html>
