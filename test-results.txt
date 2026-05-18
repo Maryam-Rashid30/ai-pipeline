@@ -1,0 +1,55 @@
+PASS ./app.test.js
+  DOM structure
+    ✓ renders text input for new todo (34 ms)
+    ✓ renders Add button (12 ms)
+    ✓ renders todo list element (6 ms)
+    ✓ renders item count element (4 ms)
+  Adding a todo
+    ✓ adds a todo item to the list when Add is clicked (11 ms)
+    ✓ clears the input after adding (5 ms)
+    ✓ adds a todo when Enter key is pressed (6 ms)
+    ✓ does not add empty or whitespace-only todos (5 ms)
+    ✓ multiple todos can be added (6 ms)
+  Marking a todo as complete
+    ✓ checking the checkbox marks the item as done (7 ms)
+    ✓ done item has strikethrough on text (via .done class) (8 ms)
+    ✓ unchecking a done item marks it incomplete again (7 ms)
+  Deleting a todo
+    ✓ clicking delete removes the item from the list (5 ms)
+    ✓ only the correct item is deleted when multiple todos exist (6 ms)
+  Remaining item count
+    ✓ shows 0 items left on initial load (4 ms)
+    ✓ increments count when a todo is added (4 ms)
+    ✓ uses singular "item" for exactly one remaining (5 ms)
+    ✓ uses plural "items" for more than one remaining (6 ms)
+    ✓ count decreases when a todo is marked done (5 ms)
+    ✓ count increases again when a done todo is unchecked (6 ms)
+    ✓ count decreases when a todo is deleted (7 ms)
+    ✓ completed todos are excluded from count (4 ms)
+  Empty state message
+    ✓ empty message is visible when there are no todos (3 ms)
+    ✓ empty message is hidden when todos exist (3 ms)
+    ✓ empty message reappears after all todos are deleted (4 ms)
+  localStorage persistence
+    ✓ saves todos to localStorage when added (3 ms)
+    ✓ saves done state to localStorage (4 ms)
+    ✓ removes todo from localStorage when deleted (3 ms)
+    ✓ loads persisted todos on page load (6 ms)
+    ✓ loads persisted done state on page load (5 ms)
+    ✓ handles corrupt localStorage gracefully without throwing (7 ms)
+  Mobile viewport (375px)
+    ✓ input and add button are present at 375px width (3 ms)
+    ✓ app container exists and is visible at 375px (4 ms)
+    ✓ todos can still be added at mobile width (6 ms)
+    ✓ viewport meta tag is set for mobile (3 ms)
+  No console errors
+    ✓ no console errors on initial page load (7 ms)
+    ✓ no console errors when adding a todo (4 ms)
+    ✓ no console errors when toggling a todo (4 ms)
+    ✓ no console errors when deleting a todo (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       39 passed, 39 total
+Snapshots:   0 total
+Time:        0.837 s, estimated 1 s
+Ran all test suites matching /app.test.js/i.
