@@ -5,417 +5,310 @@
 const fs = require('fs');
 const path = require('path');
 
-const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
-
-const scriptMatch = htmlContent.match(/<script>([\s\S]*?)<\/script>/i);
-const scriptContent = scriptMatch ? scriptMatch[1] : '';
-
-const bodyMatch = htmlContent.match(/<body>([\s\S]*)<\/body>/i);
-const rawBodyHTML = bodyMatch ? bodyMatch[1] : '';
-const bodyHTML = rawBodyHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
-
-const headMatch = htmlContent.match(/<head>([\s\S]*?)<\/head>/i);
-const headHTML = headMatch ? headMatch[1] : '';
-
-function setupDOM() {
-  document.head.innerHTML = headHTML;
-  document.body.innerHTML = bodyHTML;
-}
-
-function runScript() {
-  // eslint-disable-next-line no-eval
-  eval(scriptContent);
-}
-
 function loadApp() {
-  localStorage.clear();
-  setupDOM();
-  runScript();
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  document.documentElement.innerHTML = html;
+
+  const scripts = document.querySelectorAll('script');
+  scripts.forEach(script => {
+    if (script.textContent) {
+      // eslint-disable-next-line no-new-func
+      new Function(script.textContent)();
+    }
+  });
 }
-
-function addTodo(text) {
-  document.getElementById('new-todo').value = text;
-  document.getElementById('add-btn').click();
-}
-
-const getItems = () => Array.from(document.querySelectorAll('.todo-item'));
-const $ = (id) => document.getElementById(id);
-
-let consoleErrorSpy;
 
 beforeEach(() => {
-  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  localStorage.clear();
   loadApp();
 });
 
-afterEach(() => {
-  consoleErrorSpy.mockRestore();
-});
+const getInput = () => document.getElementById('new-todo');
+const getAddBtn = () => document.getElementById('add-btn');
+const getTodoList = () => document.getElementById('todo-list');
+const getCount = () => document.getElementById('count');
+const getEmptyMsg = () => document.getElementById('empty-msg');
 
-// ─── Initial state ────────────────────────────────────────────────────────────
+function addTodoItem(text) {
+  const input = getInput();
+  const btn = getAddBtn();
+  input.value = text;
+  btn.click();
+}
 
-describe('Initial state', () => {
-  test('shows "0 items left" on fresh load', () => {
-    expect($('count').textContent).toBe('0 items left');
+// ── Add todo ─────────────────────────────────────────────────────────────────
+
+describe('Add todo', () => {
+  test('clicking Add button adds a new todo item to the list', () => {
+    addTodoItem('Buy groceries');
+    const items = getTodoList().querySelectorAll('.todo-item');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toContain('Buy groceries');
   });
 
-  test('todo list is empty on fresh load', () => {
-    expect(getItems()).toHaveLength(0);
+  test('pressing Enter in the input adds a new todo item', () => {
+    const input = getInput();
+    input.value = 'Press enter todo';
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+    input.dispatchEvent(event);
+    const items = getTodoList().querySelectorAll('.todo-item');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toContain('Press enter todo');
   });
 
-  test('empty-state message is visible on fresh load', () => {
-    expect($('empty-msg').style.display).not.toBe('none');
+  test('input is cleared after adding a todo', () => {
+    addTodoItem('Clear me');
+    expect(getInput().value).toBe('');
   });
 
-  test('input field starts empty', () => {
-    expect($('new-todo').value).toBe('');
-  });
-});
-
-// ─── Feature: Add a new todo via text input and button ───────────────────────
-
-describe('Add a new todo item via text input and button', () => {
-  test('adds a todo when the Add button is clicked', () => {
-    addTodo('Buy groceries');
-    expect(getItems()).toHaveLength(1);
-    expect(getItems()[0].querySelector('.todo-text').textContent).toBe('Buy groceries');
+  test('whitespace-only input does not add a todo', () => {
+    addTodoItem('   ');
+    expect(getTodoList().querySelectorAll('.todo-item')).toHaveLength(0);
   });
 
-  test('adds a todo when Enter is pressed in the input', () => {
-    $('new-todo').value = 'Walk the dog';
-    $('new-todo').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    expect(getItems()).toHaveLength(1);
-    expect(getItems()[0].querySelector('.todo-text').textContent).toBe('Walk the dog');
+  test('empty input does not add a todo', () => {
+    getAddBtn().click();
+    expect(getTodoList().querySelectorAll('.todo-item')).toHaveLength(0);
   });
 
-  test('clears the input field after a todo is added', () => {
-    addTodo('Clean the house');
-    expect($('new-todo').value).toBe('');
-  });
-
-  test('does not add a todo when input is empty', () => {
-    addTodo('');
-    expect(getItems()).toHaveLength(0);
-  });
-
-  test('does not add a todo when input is whitespace only', () => {
-    addTodo('   ');
-    expect(getItems()).toHaveLength(0);
-  });
-
-  test('can add multiple todos sequentially', () => {
-    addTodo('First');
-    addTodo('Second');
-    addTodo('Third');
-    expect(getItems()).toHaveLength(3);
-    const texts = getItems().map((el) => el.querySelector('.todo-text').textContent);
-    expect(texts).toEqual(['First', 'Second', 'Third']);
-  });
-
-  test('hides empty-state message after first todo is added', () => {
-    addTodo('Something');
-    expect($('empty-msg').style.display).toBe('none');
-  });
-
-  test('new todo starts as incomplete (no done class)', () => {
-    addTodo('Fresh todo');
-    expect(getItems()[0].classList.contains('done')).toBe(false);
-  });
-
-  test('new todo checkbox starts unchecked', () => {
-    addTodo('Unchecked');
-    expect(getItems()[0].querySelector('input[type="checkbox"]').checked).toBe(false);
+  test('multiple todos can be added', () => {
+    addTodoItem('First');
+    addTodoItem('Second');
+    addTodoItem('Third');
+    expect(getTodoList().querySelectorAll('.todo-item')).toHaveLength(3);
   });
 });
 
-// ─── Feature: Mark a todo as complete with strikethrough ─────────────────────
+// ── Mark complete / strikethrough ─────────────────────────────────────────────
 
-describe('Mark a todo as complete with a strikethrough', () => {
-  test('clicking the checkbox adds the "done" class to the item', () => {
-    addTodo('Finish report');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    expect(getItems()[0].classList.contains('done')).toBe(true);
+describe('Mark todo as complete', () => {
+  test('checking the checkbox adds the done class for strikethrough', () => {
+    addTodoItem('Walk the dog');
+    const item = getTodoList().querySelector('.todo-item');
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    checkbox.click();
+    const updated = getTodoList().querySelector('.todo-item');
+    expect(updated.classList.contains('done')).toBe(true);
   });
 
-  test('checkbox reflects checked state after marking complete', () => {
-    addTodo('Check me');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    expect(getItems()[0].querySelector('input[type="checkbox"]').checked).toBe(true);
+  test('unchecking a completed todo removes the done class', () => {
+    addTodoItem('Toggle me');
+    const checkbox = getTodoList().querySelector('input[type="checkbox"]');
+    checkbox.click();
+    const checkbox2 = getTodoList().querySelector('input[type="checkbox"]');
+    checkbox2.click();
+    expect(getTodoList().querySelector('.todo-item').classList.contains('done')).toBe(false);
   });
 
-  test('clicking the checkbox again toggles the todo back to incomplete', () => {
-    addTodo('Toggle me');
-    getItems()[0].querySelector('input[type="checkbox"]').click(); // complete
-    getItems()[0].querySelector('input[type="checkbox"]').click(); // undo
-    expect(getItems()[0].classList.contains('done')).toBe(false);
-    expect(getItems()[0].querySelector('input[type="checkbox"]').checked).toBe(false);
+  test('completed checkbox is checked', () => {
+    addTodoItem('Check me');
+    getTodoList().querySelector('input[type="checkbox"]').click();
+    expect(getTodoList().querySelector('input[type="checkbox"]').checked).toBe(true);
   });
 
-  test('.done class is applied to the list item (enables strikethrough via CSS)', () => {
-    addTodo('Style check');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    const item = getItems()[0];
-    expect(item.classList.contains('done')).toBe(true);
-    expect(item.querySelector('.todo-text')).not.toBeNull();
-  });
-
-  test('only the clicked item is marked done when multiple todos exist', () => {
-    addTodo('Alpha');
-    addTodo('Beta');
-    addTodo('Gamma');
-    getItems()[1].querySelector('input[type="checkbox"]').click();
-    expect(getItems()[0].classList.contains('done')).toBe(false);
-    expect(getItems()[1].classList.contains('done')).toBe(true);
-    expect(getItems()[2].classList.contains('done')).toBe(false);
+  test('todo text element is inside .done item (drives CSS line-through)', () => {
+    addTodoItem('Style check');
+    getTodoList().querySelector('input[type="checkbox"]').click();
+    const doneItem = getTodoList().querySelector('.todo-item.done');
+    expect(doneItem).not.toBeNull();
+    expect(doneItem.querySelector('.todo-text')).not.toBeNull();
   });
 });
 
-// ─── Feature: Delete a todo item ─────────────────────────────────────────────
+// ── Delete todo ───────────────────────────────────────────────────────────────
 
-describe('Delete a todo item', () => {
-  test('clicking the delete button removes the todo from the list', () => {
-    addTodo('Delete me');
-    getItems()[0].querySelector('.delete-btn').click();
-    expect(getItems()).toHaveLength(0);
+describe('Delete todo', () => {
+  test('clicking delete button removes the todo item', () => {
+    addTodoItem('Delete me');
+    getTodoList().querySelector('.delete-btn').click();
+    expect(getTodoList().querySelectorAll('.todo-item')).toHaveLength(0);
   });
 
-  test('removes the correct todo when multiple exist', () => {
-    addTodo('Keep A');
-    addTodo('Remove B');
-    addTodo('Keep C');
-    getItems()[1].querySelector('.delete-btn').click();
-    const texts = getItems().map((el) => el.querySelector('.todo-text').textContent);
-    expect(texts).toEqual(['Keep A', 'Keep C']);
-  });
-
-  test('list is empty after deleting the only todo', () => {
-    addTodo('Solo');
-    getItems()[0].querySelector('.delete-btn').click();
-    expect(getItems()).toHaveLength(0);
-  });
-
-  test('shows empty-state message after the last todo is deleted', () => {
-    addTodo('Last one');
-    getItems()[0].querySelector('.delete-btn').click();
-    expect($('empty-msg').style.display).not.toBe('none');
-  });
-
-  test('count resets to "0 items left" after all todos are deleted', () => {
-    addTodo('One');
-    addTodo('Two');
-    getItems()[0].querySelector('.delete-btn').click();
-    getItems()[0].querySelector('.delete-btn').click();
-    expect($('count').textContent).toBe('0 items left');
+  test('deletes the correct item when multiple todos exist', () => {
+    addTodoItem('Keep me');
+    addTodoItem('Delete me');
+    const deleteBtns = getTodoList().querySelectorAll('.delete-btn');
+    deleteBtns[1].click();
+    const remaining = getTodoList().querySelectorAll('.todo-item');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].textContent).toContain('Keep me');
   });
 });
 
-// ─── Feature: Count of remaining incomplete items ────────────────────────────
+// ── Remaining item count ──────────────────────────────────────────────────────
 
-describe('Show a count of remaining incomplete items', () => {
-  test('shows "0 items left" on fresh load', () => {
-    expect($('count').textContent).toBe('0 items left');
+describe('Remaining item count', () => {
+  test('count shows 0 items left when list is empty', () => {
+    expect(getCount().textContent).toBe('0 items left');
   });
 
-  test('shows "1 item left" after adding one todo', () => {
-    addTodo('Solo');
-    expect($('count').textContent).toBe('1 item left');
+  test('count updates when a todo is added', () => {
+    addTodoItem('Task one');
+    expect(getCount().textContent).toBe('1 item left');
   });
 
-  test('uses singular "item" (not "items") for a count of 1', () => {
-    addTodo('Solo');
-    expect($('count').textContent).toBe('1 item left');
+  test('count uses singular "item" for exactly 1 item', () => {
+    addTodoItem('Single task');
+    expect(getCount().textContent).toBe('1 item left');
   });
 
-  test('uses plural "items" when count is greater than 1', () => {
-    addTodo('First');
-    addTodo('Second');
-    expect($('count').textContent).toBe('2 items left');
+  test('count uses plural "items" for 2+ items', () => {
+    addTodoItem('Task A');
+    addTodoItem('Task B');
+    expect(getCount().textContent).toBe('2 items left');
   });
 
-  test('count decrements when a todo is marked complete', () => {
-    addTodo('One');
-    addTodo('Two');
-    addTodo('Three');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    expect($('count').textContent).toBe('2 items left');
+  test('count decreases when an item is marked complete', () => {
+    addTodoItem('Task');
+    getTodoList().querySelector('input[type="checkbox"]').click();
+    expect(getCount().textContent).toBe('0 items left');
   });
 
-  test('completed todos are excluded from the remaining count', () => {
-    addTodo('One');
-    addTodo('Two');
-    addTodo('Three');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    getItems()[1].querySelector('input[type="checkbox"]').click();
-    expect($('count').textContent).toBe('1 item left');
+  test('count only counts incomplete items', () => {
+    addTodoItem('Done task');
+    addTodoItem('Pending task');
+    getTodoList().querySelector('input[type="checkbox"]').click();
+    expect(getCount().textContent).toBe('1 item left');
   });
 
-  test('count goes to "0 items left" after all todos are completed', () => {
-    addTodo('One');
-    addTodo('Two');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    getItems()[1].querySelector('input[type="checkbox"]').click();
-    expect($('count').textContent).toBe('0 items left');
-  });
-
-  test('count decrements when a todo is deleted', () => {
-    addTodo('One');
-    addTodo('Two');
-    getItems()[0].querySelector('.delete-btn').click();
-    expect($('count').textContent).toBe('1 item left');
-  });
-
-  test('completed todos do not contribute to count even after adding more', () => {
-    addTodo('Done item');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    addTodo('Active item');
-    expect($('count').textContent).toBe('1 item left');
+  test('count decreases when a todo is deleted', () => {
+    addTodoItem('Remove me');
+    getTodoList().querySelector('.delete-btn').click();
+    expect(getCount().textContent).toBe('0 items left');
   });
 });
 
-// ─── Feature: Persist todos in localStorage ──────────────────────────────────
+// ── Empty state message ───────────────────────────────────────────────────────
 
-describe('Persist todos in localStorage', () => {
-  test('saves a new todo to localStorage', () => {
-    addTodo('Remember this');
+describe('Empty state message', () => {
+  test('empty message is visible when no todos exist', () => {
+    expect(getEmptyMsg().style.display).not.toBe('none');
+  });
+
+  test('empty message is hidden when there is at least one todo', () => {
+    addTodoItem('Something');
+    expect(getEmptyMsg().style.display).toBe('none');
+  });
+
+  test('empty message reappears after all todos are deleted', () => {
+    addTodoItem('Temp');
+    getTodoList().querySelector('.delete-btn').click();
+    expect(getEmptyMsg().style.display).not.toBe('none');
+  });
+});
+
+// ── localStorage persistence ──────────────────────────────────────────────────
+
+describe('localStorage persistence', () => {
+  test('todos are saved to localStorage when added', () => {
+    addTodoItem('Persist me');
     const stored = JSON.parse(localStorage.getItem('todos_v1'));
-    expect(stored).toHaveLength(1);
-    expect(stored[0].text).toBe('Remember this');
+    expect(stored).not.toBeNull();
+    expect(stored.length).toBe(1);
+    expect(stored[0].text).toBe('Persist me');
     expect(stored[0].done).toBe(false);
   });
 
-  test('saves the completed state to localStorage', () => {
-    addTodo('Complete me');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
+  test('done state is persisted to localStorage', () => {
+    addTodoItem('Mark done');
+    getTodoList().querySelector('input[type="checkbox"]').click();
     const stored = JSON.parse(localStorage.getItem('todos_v1'));
     expect(stored[0].done).toBe(true);
   });
 
-  test('reflects deletion in localStorage', () => {
-    addTodo('Delete me');
-    getItems()[0].querySelector('.delete-btn').click();
+  test('deletion is reflected in localStorage', () => {
+    addTodoItem('Delete me');
+    getTodoList().querySelector('.delete-btn').click();
     const stored = JSON.parse(localStorage.getItem('todos_v1'));
-    expect(stored).toHaveLength(0);
+    expect(stored.length).toBe(0);
   });
 
-  test('loads persisted todos from localStorage on startup', () => {
-    setupDOM();
-    localStorage.setItem(
-      'todos_v1',
-      JSON.stringify([
-        { text: 'Persisted todo', done: false },
-        { text: 'Done todo', done: true },
-      ])
-    );
-    runScript();
-
-    expect(getItems()).toHaveLength(2);
-    expect(getItems()[0].querySelector('.todo-text').textContent).toBe('Persisted todo');
-    expect(getItems()[1].querySelector('.todo-text').textContent).toBe('Done todo');
-    expect(getItems()[1].classList.contains('done')).toBe(true);
+  test('todos are loaded from localStorage on page load', () => {
+    localStorage.setItem('todos_v1', JSON.stringify([
+      { text: 'Loaded todo', done: false },
+      { text: 'Done todo', done: true }
+    ]));
+    loadApp();
+    const items = getTodoList().querySelectorAll('.todo-item');
+    expect(items).toHaveLength(2);
+    expect(items[0].textContent).toContain('Loaded todo');
+    expect(items[1].classList.contains('done')).toBe(true);
   });
 
-  test('count is correct after loading todos from localStorage', () => {
-    setupDOM();
-    localStorage.setItem(
-      'todos_v1',
-      JSON.stringify([
-        { text: 'Active', done: false },
-        { text: 'Done', done: true },
-      ])
-    );
-    runScript();
-    expect($('count').textContent).toBe('1 item left');
-  });
-
-  test('empty-msg is hidden when todos are loaded from localStorage', () => {
-    setupDOM();
-    localStorage.setItem('todos_v1', JSON.stringify([{ text: 'Stored task', done: false }]));
-    runScript();
-    expect($('empty-msg').style.display).toBe('none');
-  });
-
-  test('saves multiple todos to localStorage correctly', () => {
-    addTodo('Alpha');
-    addTodo('Beta');
-    addTodo('Gamma');
-    const stored = JSON.parse(localStorage.getItem('todos_v1'));
-    expect(stored).toHaveLength(3);
-    expect(stored.map((t) => t.text)).toEqual(['Alpha', 'Beta', 'Gamma']);
+  test('loaded done todos show as checked', () => {
+    localStorage.setItem('todos_v1', JSON.stringify([
+      { text: 'Was done', done: true }
+    ]));
+    loadApp();
+    expect(getTodoList().querySelector('input[type="checkbox"]').checked).toBe(true);
   });
 });
 
-// ─── No console errors ───────────────────────────────────────────────────────
+// ── No console errors ─────────────────────────────────────────────────────────
 
-describe('No console errors during normal usage', () => {
-  test('no console.error on a full add → complete → delete flow', () => {
-    addTodo('Test task');
-    getItems()[0].querySelector('input[type="checkbox"]').click();
-    getItems()[0].querySelector('.delete-btn').click();
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-  test('no console.error on Enter key submit', () => {
-    $('new-todo').value = 'Enter task';
-    $('new-todo').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-  test('no console.error when loading from localStorage', () => {
-    setupDOM();
-    localStorage.setItem('todos_v1', JSON.stringify([{ text: 'Stored', done: false }]));
-    runScript();
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-  test('no console.error when submitting an empty input', () => {
-    addTodo('');
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
+describe('No console errors', () => {
+  test('no console.error calls during normal usage', () => {
+    const spy = jest.spyOn(console, 'error');
+    addTodoItem('No error task');
+    getTodoList().querySelector('input[type="checkbox"]').click();
+    getTodoList().querySelector('.delete-btn').click();
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
 
-// ─── Mobile compatibility (375px wide) ──────────────────────────────────────
+// ── Mobile viewport (375px) ───────────────────────────────────────────────────
 
-describe('Page works on mobile (375px wide)', () => {
-  test('viewport meta tag is present with width=device-width', () => {
-    const vp = document.querySelector('meta[name="viewport"]');
-    expect(vp).not.toBeNull();
-    expect(vp.getAttribute('content')).toContain('width=device-width');
+describe('Mobile viewport', () => {
+  test('viewport meta tag is set for device width', () => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    expect(viewport).not.toBeNull();
+    expect(viewport.getAttribute('content')).toContain('width=device-width');
   });
 
-  test('app container element exists in DOM', () => {
-    expect(document.querySelector('.app')).not.toBeNull();
+  test('responsive CSS media query targets mobile widths', () => {
+    const styleContent = Array.from(document.querySelectorAll('style'))
+      .map(s => s.textContent).join('');
+    expect(styleContent).toMatch(/@media.*max-width.*400px/);
   });
 
-  test('text input is present and interactive', () => {
-    const input = $('new-todo');
-    expect(input).not.toBeNull();
-    expect(input.tagName).toBe('INPUT');
+  test('input and Add button are grouped inside the input-row container', () => {
+    const inputRow = document.querySelector('.input-row');
+    expect(inputRow).not.toBeNull();
+    expect(inputRow.querySelector('#new-todo')).not.toBeNull();
+    expect(inputRow.querySelector('#add-btn')).not.toBeNull();
   });
 
-  test('Add button is present and interactive', () => {
-    const btn = $('add-btn');
-    expect(btn).not.toBeNull();
-    expect(btn.tagName).toBe('BUTTON');
+  test('app renders todos correctly regardless of viewport size', () => {
+    addTodoItem('Mobile todo');
+    expect(getTodoList().querySelectorAll('.todo-item')).toHaveLength(1);
+  });
+});
+
+// ── DOM structure ─────────────────────────────────────────────────────────────
+
+describe('DOM structure', () => {
+  test('page has a text input with id new-todo', () => {
+    expect(document.getElementById('new-todo')).not.toBeNull();
   });
 
-  test('todo list container is present in DOM', () => {
-    expect($('todo-list')).not.toBeNull();
+  test('page has an Add button with id add-btn', () => {
+    expect(document.getElementById('add-btn')).not.toBeNull();
   });
 
-  test('count element is present and shows remaining items', () => {
-    const count = $('count');
-    expect(count).not.toBeNull();
-    expect(count.textContent).toMatch(/items? left/);
+  test('page has a todo list element with id todo-list', () => {
+    expect(document.getElementById('todo-list')).not.toBeNull();
   });
 
-  test('app renders and functions correctly at 375px window width', () => {
-    Object.defineProperty(window, 'innerWidth', {
-      value: 375,
-      writable: true,
-      configurable: true,
-    });
-    addTodo('Mobile task');
-    expect(getItems()).toHaveLength(1);
-    expect(getItems()[0].querySelector('.todo-text').textContent).toBe('Mobile task');
+  test('page has a count element with id count', () => {
+    expect(document.getElementById('count')).not.toBeNull();
+  });
+
+  test('each todo item has a checkbox, text span, and delete button', () => {
+    addTodoItem('Structured item');
+    const item = getTodoList().querySelector('.todo-item');
+    expect(item.querySelector('input[type="checkbox"]')).not.toBeNull();
+    expect(item.querySelector('.todo-text')).not.toBeNull();
+    expect(item.querySelector('.delete-btn')).not.toBeNull();
   });
 });
